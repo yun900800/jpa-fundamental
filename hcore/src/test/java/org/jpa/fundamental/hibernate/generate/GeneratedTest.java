@@ -3,22 +3,24 @@ package org.jpa.fundamental.hibernate.generate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
-import org.jpa.fundamental.utils.AbstractTest;
+import org.jpa.fundamental.utils.AbstractSQLServerIntegrationTest;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class GenerateTest extends AbstractTest {
+public class GeneratedTest extends AbstractSQLServerIntegrationTest {
+
     @Override
-    protected Class[] entities() {
-        return new Class[]{Hero.class};
+    protected Class<?>[] entities() {
+        return new Class<?>[] {
+                Hero.class
+        };
     }
 
     @Test
-    public void testInsertHero() {
+    public void test() {
         doInJPA( entityManager -> {
             Hero heroine = new Hero();
             heroine.setId( 1L );
@@ -33,12 +35,8 @@ public class GenerateTest extends AbstractTest {
             LOGGER.info(()->"After entity persist action");
             entityManager.flush();
 
-            assertEquals(
-                    null,
-                    heroine.getFullName()
-            );
+            assertEquals("Agustina Raimunda María Saragossa Domènech", heroine.getFullName());
         } );
-
         doInJPA( entityManager -> {
             Hero heroine = entityManager.find( Hero.class, 1L );
             heroine.setMiddleName1( null );
@@ -49,13 +47,13 @@ public class GenerateTest extends AbstractTest {
             LOGGER.info(()->"After entity update action");
             entityManager.flush();
 
-            assertEquals(null, heroine.getFullName());
+            assertEquals("Agustina de Aragón", heroine.getFullName());
         } );
     }
 
-    @Entity(name = "hero")
-    @Table(name = "hero")
+    @Entity(name = "Hero")
     public static class Hero {
+
         @Id
         private Long id;
 
@@ -75,26 +73,18 @@ public class GenerateTest extends AbstractTest {
 
         @Generated( value = GenerationTime.ALWAYS )
         @Column(columnDefinition =
-                "varchar(2000) GENERATED ALWAYS AS (CONCAT(" +
-                        "    firstName, " +
-                        "    middleName1," +
-                        "    middleName2, " +
-                        "    middleName3, " +
-                        "    middleName4, " +
-                        "    middleName5, " +
-                        "    lastName) " +
-                        ")", length = 2000)
+                "AS CONCAT(" +
+                        "	COALESCE(firstName, ''), " +
+                        "	COALESCE(' ' + middleName1, ''), " +
+                        "	COALESCE(' ' + middleName2, ''), " +
+                        "	COALESCE(' ' + middleName3, ''), " +
+                        "	COALESCE(' ' + middleName4, ''), " +
+                        "	COALESCE(' ' + middleName5, ''), " +
+                        "	COALESCE(' ' + lastName, '') " +
+                        ")")
         private String fullName;
 
         //Getters and setters omitted for brevity
-
-        public String getFullName() {
-            return fullName;
-        }
-
-        public void setFullName(String fullName){
-            this.fullName = fullName;
-        }
 
         public Long getId() {
             return id;
@@ -159,5 +149,10 @@ public class GenerateTest extends AbstractTest {
         public void setMiddleName5(String middleName5) {
             this.middleName5 = middleName5;
         }
+
+        public String getFullName() {
+            return fullName;
+        }
+
     }
 }
